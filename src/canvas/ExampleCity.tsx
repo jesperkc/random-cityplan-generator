@@ -13,7 +13,7 @@ interface IShape {
 }
 
 interface ISlicedShape {
-  shapes: IShapeEdge[];
+  shapes: IShape[];
   sliceLines: THREE.Vector2[][];
 }
 
@@ -24,7 +24,7 @@ interface IRoadLines {
 
 const roadLines: IRoadLines[] = [];
 
-const savedlog: [] = [];
+const savedlog: any[] = [];
 function resetlog() {
   savedlog.splice(0);
 }
@@ -74,7 +74,7 @@ function line_intersect(
   return { x, y };
 }
 
-function getIntersections(lines) {
+function getIntersections(lines: any[]) {
   const intersections = [];
   for (var i = 0; i < lines.length; i++) {
     const currentline = lines[i];
@@ -97,7 +97,7 @@ function getIntersections(lines) {
   return intersections;
 }
 
-function shiftArrayToRight(arr, places) {
+function shiftArrayToRight(arr: any[], places: number) {
   for (var i = 0; i < places; i++) {
     arr.unshift(arr.pop());
   }
@@ -153,7 +153,7 @@ function getLineIntersectionsWithShape(
   }
   // console.log("returnArrays", returnArrays);
   returnArrays.forEach((r) => {
-    if (r.length <= 2) {
+    if (r.edges.length <= 2) {
       console.log("***");
       outputlog();
       resetlog();
@@ -175,7 +175,7 @@ function getLineIntersectionsWithShape(
   };
 }
 
-function pointAtX(a, b, x) {
+function pointAtX(a: any, b: any, x: any) {
   var slope = (b[1] - a[1]) / (b[0] - a[0]);
   var y = a[1] + (x - a[0]) * slope;
   return [x, y];
@@ -243,7 +243,7 @@ function cleanupShape(shape: IShape) {
 }
 
 function sliceShape(shape: IShape, lines: THREE.Vector2[][]): ISlicedShape {
-  let slicedShapes: IShapeEdge[] = [];
+  let slicedShapes: IShape[] = [];
   const sliceLines: THREE.Vector2[][] = [];
 
   let baseshape: IShape | null = cleanupShape(shape);
@@ -254,10 +254,10 @@ function sliceShape(shape: IShape, lines: THREE.Vector2[][]): ISlicedShape {
       // console.log("shapes", shapes);
 
       sliceLines.push(shapes.slicingLine);
-      if (shapes.shapes[1] && shapes.shapes[1].length) {
+      if (shapes.shapes[1] && shapes.shapes[1].edges.length) {
         slicedShapes.push(cleanupShape(shapes.shapes[1]));
       }
-      if (shapes.shapes[0] && shapes.shapes[0].length) {
+      if (shapes.shapes[0] && shapes.shapes[0].edges.length) {
         baseshape = cleanupShape(shapes.shapes[0]);
       } else {
         baseshape = null;
@@ -281,7 +281,7 @@ function fillShape3d(fill: THREE.Vector2[]) {
   });
 
   const curbSpline = new THREE.CatmullRomCurve3(curbshape, true, "catmullrom");
-  curbSpline.tension = 0.1;
+  // curbSpline.tension = 0.1;
   const points = curbSpline.getPoints(50);
   const geom = new THREE.BufferGeometry().setFromPoints(points);
 
@@ -291,17 +291,17 @@ function fillShape3d(fill: THREE.Vector2[]) {
   return geom;
 }
 
-function fillShape(fill: THREE.Vector2[]) {
+function fillShape(fill: IShape) {
   const fillShape = new THREE.Shape();
   // console.log("fillShape", fill);
 
-  fill.forEach((f, i) => {
+  fill.edges.forEach((f, i) => {
     if (i === 0) {
       // console.log("moveTo", f.x, f.y);
-      fillShape.moveTo(f.x, f.y);
+      fillShape.moveTo(f.start.x, f.start.y);
     } else {
       // console.log("lineTo", f.x, f.y);
-      fillShape.lineTo(f.x, f.y);
+      fillShape.lineTo(f.start.x, f.start.y);
     }
   });
   fillShape.closePath();
@@ -335,7 +335,7 @@ let splitShapeCount = 0;
 
 function splitShape(fill: IShape) {
   splitShapeCount = splitShapeCount + 1;
-  let slicedShapesFinal: THREE.Vector2[][] = [];
+  let slicedShapesFinal:IShape[] = [];
   const area = -THREE.ShapeUtils.area(fill.edges.map((e) => e.start));
   console.log("area", area);
   if (area > 10 && splitShapeCount < 500) {
@@ -364,10 +364,10 @@ function splitShape(fill: IShape) {
       ];
     }
     // console.log("vertLines", vertLines);
-    const slicedShapessemiFinal: THREE.Vector2[][] = [];
+    const slicedShapessemiFinal: IShape[] = [];
     const slicedShapes = sliceShape(fill, vertLines);
     slicedShapes.shapes.forEach((s, ii) => {
-      const newsplitshapes: THREE.Vector2[][] = splitShape(s);
+      const newsplitshapes: IShape[] = splitShape(s);
       slicedShapessemiFinal.push(...newsplitshapes);
     });
 
@@ -500,7 +500,7 @@ export default function ExampleCity(): JSX.Element {
   //   // console.log("slicedShapes", slicedShapes);
   // }
 
-  let finalfinalFillsArray: THREE.Vector2[][] = [];
+  let finalfinalFillsArray: IShape[] = [];
 
   splitShapeCount = 0;
   console.warn("Starting split");
@@ -525,7 +525,7 @@ export default function ExampleCity(): JSX.Element {
     <group position={[0, 0, 0]}>
       <RoadLines roadLines={roadLines} />
       {finalfinalFillsArray &&
-        finalfinalFillsArray.map((fill: THREE.Vector2[], i) => {
+        finalfinalFillsArray.map((fill: IShape, i) => {
           const color = new THREE.Color(0xffffff);
           if (i > 0) color.setHex(Math.random() * 0xffffff);
           return (

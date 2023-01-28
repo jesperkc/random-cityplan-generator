@@ -1,6 +1,5 @@
 import React from "react";
 import { OrbitControls } from "@react-three/drei";
-import "normalize.css";
 
 import FullScreenCanvas from "./canvas/FullScreenCanvas";
 import ExampleCamera from "./canvas/ExampleCamera";
